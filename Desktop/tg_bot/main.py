@@ -30,24 +30,23 @@ def echo(update: Update, context: CallbackContext) -> None:
         chat_id = update.effective_message.chat.title
         user_name = update.effective_message.from_user.name
         if isinstance(chat_id, type(None)):
-            chat_id = "Чат-бот, ID: " + str(update.effective_message.chat.id)
+            chat_id = "Чат-бот/ID " + str(update.effective_message.chat.id)
         stat_dict[chat_id][user_name.replace('@', '')] +=  1
         update.message.reply_text('Данная информация может быть недостоверна', quote=True)
 
 
 def stats(update: Update, context: CallbackContext) -> None:
-    chat_id = str(update.effective_message.chat_id)
     temp = ''
     if update.effective_message.chat.type == 'private':  # private message to bot
-        for i in stat_dict.keys():
-            temp += i + ':\n'
-            for key, val in stat_dict[i].items():
-                temp += key + ': ' + str(val) + '\n'
-            temp += '\n\n'      
+        for group in sorted(stat_dict.keys()):
+            temp += group + ':\n'
+            for name, val in sorted(stat_dict[group].items(), key = lambda p: -p[1]):
+                temp += '\U0000221F' + name + ': ' + str(val) + '\n'
+            temp += '\n'      
     else:
-        for key, val in sorted(stat_dict[chat_id].items(), key = lambda p: -p[1]):
-            print(i)
-            temp += key + ': ' + str(val) + '\n'
+        chat_name = update.effective_message.chat.title
+        for name, val in sorted(stat_dict[chat_name].items(), key = lambda p: -p[1]):
+            temp += '\U0000221F' + name + ': ' + str(val) + '\n'
 
     try:
         update.message.reply_text(temp)
