@@ -6,6 +6,11 @@ from telegram.ext import Updater, CommandHandler, Filters, MessageHandler, Callb
 
 TOKEN = '2136138549:AAFUlQLFBkh4tB1I6Ifkml9veLvzGjdu6mY'
 
+##логи
+##import logging
+##logging.basicConfig(format='%(levelname)s - %(message)s', level=logging.DEBUG)
+##logger = logging.getLogger(__name__)
+
 
 def is_bad(text: str) -> bool:
     for word in bad_list:
@@ -42,7 +47,7 @@ def stats(update: Update, context: CallbackContext) -> None:
             temp += group + ':\n'
             for name, val in sorted(stat_dict[group].items(), key = lambda p: -p[1]):
                 temp += '\U0000221F' + name + ': ' + str(val) + '\n'
-            temp += '\n'      
+            temp += '\n'
     else:
         chat_name = update.effective_message.chat.title
         for name, val in sorted(stat_dict[chat_name].items(), key = lambda p: -p[1]):
@@ -52,7 +57,15 @@ def stats(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(temp)
     except BadRequest:
         update.message.reply_text("Данных нет")
-    
+
+
+def track_chats(update: Update, context: CallbackContext) -> None:
+    global stat_dict
+    if update.effective_message.left_chat_member['is_bot'] and update.effective_message.left_chat_member['id'] == bot.id:
+        chat_name = update.effective_chat.title
+        print('Удалена статистика по чату', chat_name)
+        del stat_dict[chat_name]
+
 
 if __name__ == "__main__":
     stat_dict = defaultdict(lambda: defaultdict(int))
@@ -65,12 +78,13 @@ if __name__ == "__main__":
     publish_handler = CommandHandler('publish', publish)
     help_handler = CommandHandler('help', help)
     stat_handler = CommandHandler('stats', stats)
-    
-    updater.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+
     updater.dispatcher.add_handler(publish_handler)
     updater.dispatcher.add_handler(help_handler)
     updater.dispatcher.add_handler(stat_handler)
 
-    
+    updater.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    updater.dispatcher.add_handler(MessageHandler(Filters.status_update.left_chat_member, track_chats))
+
     updater.start_polling()
 
